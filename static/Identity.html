@@ -24,10 +24,7 @@
 				Your Name   <input type="text" id="IdName">
 				<br>
 				<div id="errorMsg"><p>Input Your Name!!</p></div>
-				<div id="idFormBtn">
-					Add Identity
-				</div>
-				
+				<div id="idFormBtn">Add Identity</div>
 			</div>
 		</div>
 		
@@ -46,7 +43,6 @@
 		<div id="IdBlock">
 			<h3>Your Identities</h3>
 			<div id="idArray">
-
 				<!-- <div class="idThumbnail" id="dipsy" onclick="IdThumbnailClicked(this)"><div>Dipsy</div></div> -->
 				<div class="addId" id="addIdBtn"><div><img src="img/fingerPrint.png" height="40"></div></div>
 			</div>
@@ -54,11 +50,17 @@
 
 		<div id="keyAndClaimHolder">
 			<div id="keyHolder">
-				<h3>Keys</h3>
+				<div id="keyHolderNameTag">
+					<div><h3>Keys</h3></div>
+					<div id="addKeyBtn"><h3>Add&#43;</h3></div>	
+				</div>		
 				<div id="displayKeys"></div>
 			</div>
 			<div id="ClaimHolder">
-				<h3>Claims</h3>
+				<div id="claimHolderNameTag">
+					<div><h3>Claims</h3></div>
+					<div id="addClaimBtn"><h3>Add &#43;</h3></div>
+				</div>
 				<div id="displayClaims"></div>
 			</div>
 		</div>
@@ -68,6 +70,5 @@
 		<script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.36/dist/web3.min.js" integrity="sha256-nWBTbvxhJgjslRyuAKJHK+XcZPlCnmIAAMixz6EefVk=" crossorigin="anonymous"></script>
 		<script src="./js/main.js"></script>
 
-		
 	</body>
 </html>

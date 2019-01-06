@@ -1,11 +1,32 @@
 function IdThumbnailClicked(e){
   var id = e.id;
-  console.log(id);
+  
+  $.ajax({
+    url: '/getDatasbyObjectId/' + id,
+    type: 'GET',
+    success: (data) => {
+      var keyHolderAddress = data.identity.keyHolderAddr;
+      var claimHolderAddress = data.identity.claimHolderAddr;
+
+      // var keyHolderContract = web3.eth.Contract(keyHolderABI);
+      // keyHolder.options.address = keyHolderAddress;
+
+      // keyHolderContract.methods.getkeysByPurpose(1).then();
+
+      console.log("keyHolder: "+ keyHolderAddress);
+      console.log("claimHolder: "+ claimHolderAddress);
+    }
+  });
 };
 
 
 $(function(){
-
+  var keyHolderABI = undefined;
+  var claimHolderABI = undefined;
+  var account = undefined;
+  var network = undefined;
+  
+  /////////////////////// routines //////////////////////////  
   /////////////////// set eth provider //////////////////////
   if (typeof web3 !== 'undefined') {
     web3 = new Web3(web3.currentProvider);
@@ -15,13 +36,13 @@ $(function(){
       web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
   }
 
-  
   ////////////////// display current Network ////////////////
   web3.eth.net.getId((err, res) => {
-    console.log(res);
+    
     if(res){
       switch (res) {
         case 1:
+          network = 'mainnet';
           var networkDisplay = new Vue({
             el: '#networkDisplay',
             data: {network: 'Mainnet'}
@@ -29,6 +50,7 @@ $(function(){
           
             break
         case 3:
+          network = 'ropsten';
           var networkDisplay = new Vue({
             el: '#networkDisplay',
             data: {network: 'Ropsten'}
@@ -36,12 +58,14 @@ $(function(){
           
             break
         case 4:
+        network = 'rinkeby';
           var networkDisplay = new Vue({
             el: '#networkDisplay',
             data: {network: 'Rinkeby'}
           });
           
         case 42:
+          network = 'kovan';
           var networkDisplay = new Vue({
             el: '#networkDisplay',
             data: {network: 'Kovan'}
@@ -49,6 +73,7 @@ $(function(){
 
             break
         default:
+          network = 'localhost';
           var networkDisplay = new Vue({
             el: '#networkDisplay',
             data: {network: 'localhost'}
@@ -61,35 +86,55 @@ $(function(){
       });
     }
     
+  }).then(function(){
+    web3.eth.getAccounts((err, res) => {
+      if(res){
+        if (res == ""){
+          var networkDisplay = new Vue({
+              el: '#diplayAccount',
+              data: {ethAccount: "Can't found any account, please check your provider configuration"}
+            });
+        }else{
+          account = res[0];
+          var networkDisplay = new Vue({
+              el: '#diplayAccount',
+              data: {ethAccount: res[0]}
+            }); 
+        }
+      }
+    }).then(function(){
+      var url = '/getIdentityByEthAccount/' + network + '/' + account;
+
+      $.ajax({
+        url: url,
+        type: 'GET',
+        success: (data) => {
+          for(var i = 0; i < data.length; i ++){
+            var name = data[i].identity.name;
+            var id = data[i]._id;
+            var thumbnail = `<div class="idThumbnail" id="${id}" onclick="IdThumbnailClicked(this)"><div>${name}</div></div>`;
+            $("#idArray").prepend(thumbnail);
+          }
+        }
+      });
+    });
   });
   
-  ////////////////// display currentAccount ///////////////////
-  web3.eth.getAccounts((err, res) => {
-    if(res){
-      if (res == ""){
-        var networkDisplay = new Vue({
-            el: '#diplayAccount',
-            data: {ethAccount: "Can't found any account, please check your provider configuration"}
-          });
-      }else{
-        var networkDisplay = new Vue({
-            el: '#diplayAccount',
-            data: {ethAccount: res[0]}
-          }); 
-      }
-    }
-  });
 
   //// fetch key and claim holder datas from db and render ////
 
   $.ajax({
     url:'',
     type:'',
-    success: () => {
+    success: (data) => {
       // make div tag by Object Id
       //
     }
   });
+
+  ///////// fetch keys and claims and render /////////////////
+
+  keyHolderContract = undefined;
 
   ///////////// handel add Id btn clicked ////////////////////
   $("#addIdBtn").click(function(){
@@ -148,6 +193,16 @@ $(function(){
             var claimHolderAddress = undefined;
             var fisrtKey = undefined;
 
+            var IDdata = {
+              "network": "",
+              "ethAccount": account,
+              "identity": {
+                "name": "",
+                "keyHolderAddr": "",
+                "claimHolderAddr": ""
+              }
+            };
+
             //////////////  deploy keyHolder ///////////////
             keyHolderContract.deploy()
             .send({
@@ -200,7 +255,20 @@ $(function(){
                   ////////////////////// add to db /////////////////////
                   //////////////////////////////////////////////////////
                   //////////////////////////////////////////////////////
+                  IDdata.network = network;
+                  IDdata.ethAccount = address;
+                  IDdata.identity.name = name;
+                  IDdata.identity.keyHolderAddr = keyHolderAddress;
+                  IDdata.identity.claimHolderAddr = claimHolderAddress;
 
+                  $.ajax({
+                    url: 'storeId2DB',
+                    type: 'POST',
+                    data: IDdata,
+                    success: (result) => {
+                      console.log(result);
+                    }
+                  });
                   /// log
                   console.log("keys and claims holder added to DB");
                 }else{
@@ -232,6 +300,14 @@ $(function(){
 
   });
 
+  $("#addKeyBtn").click(function(){
+
+    console.log("clicked");
+  });
+
+  $("#addClaimBtn").click(function(){
+    console.log("clicked");
+  });
 
   //////////////// Id thumbnail clicked ////////////////
   

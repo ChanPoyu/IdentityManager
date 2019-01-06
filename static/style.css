@@ -134,8 +134,14 @@ p {
 	width: 45%;
 }
 
-#keyHolder > h3, #ClaimHolder > h3{
+#keyHolderNameTag, #claimHolderNameTag {
+	display: flex;
+	justify-content: space-between;
 	color: #fff;
+}
+
+#addKeyBtn:hover, #addClaimBtn:hover {
+	color: #390;
 }
 
 #displayKeys, #displayClaims {
