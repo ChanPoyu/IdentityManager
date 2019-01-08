@@ -28,7 +28,7 @@ app.set('view engine', 'ejs');
 /////////////////////////////////////////////////////////////////////////////////
 
 app.use(cors());
-app.use(express.static(__dirname + '/static'));
+// app.use(express.static(__dirname + '/static'));
 app.use(morgan('combined'));  // logger middleware
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
