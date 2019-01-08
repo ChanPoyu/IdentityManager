@@ -8,7 +8,7 @@ const upload = multer(); // for parsing multipart/form-data
 const Joi = require('joi'); 
 const path = require('path');
 const app = express();
-const port = 8000;
+const port = 80;
 const Identity = require('./db/Identity');
 require('dotenv').config();
 
