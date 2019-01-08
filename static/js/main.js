@@ -1,6 +1,9 @@
 function IdThumbnailClicked(e){
   var id = e.id;
-  
+  // var keyHolderAddress = undefined;
+  // var claimHolderAddress = undefined;
+  // var keyHolderContract = undefined;
+
   $.ajax({
     url: '/getDatasbyObjectId/' + id,
     type: 'GET',
@@ -8,24 +11,48 @@ function IdThumbnailClicked(e){
       var keyHolderAddress = data.identity.keyHolderAddr;
       var claimHolderAddress = data.identity.claimHolderAddr;
 
-      // var keyHolderContract = web3.eth.Contract(keyHolderABI);
-      // keyHolder.options.address = keyHolderAddress;
+        $.ajax({
+          url: "fetchContractDatas/",
+          type: "GET",
+          success: (data, stat, xhr) => {
+            var keyHolderABI = data.keyHolderABI;
 
-      // keyHolderContract.methods.getkeysByPurpose(1).then();
+            var keyHolderContract = new web3.eth.Contract(keyHolderABI);
 
-      console.log("keyHolder: "+ keyHolderAddress);
-      console.log("claimHolder: "+ claimHolderAddress);
+            keyHolderContract.options.address = keyHolderAddress;
+
+            keyHolderContract.methods.getKeysByPurpose([1]).call({from: "0x6FE11fF5A4c84f993869e69DAe630CF192c8bbF5"},function(res){
+
+                console.log(res);  
+              
+            });
+
+          }
+        });
     }
   });
+
 };
 
 
+
+$("#addKeyBtn").click(function(){
+
+  console.log("clicked");
+});
+
+$("#addClaimBtn").click(function(){
+  console.log("clicked");
+});
+
+
 $(function(){
+
   var keyHolderABI = undefined;
   var claimHolderABI = undefined;
   var account = undefined;
   var network = undefined;
-  
+
   /////////////////////// routines //////////////////////////  
   /////////////////// set eth provider //////////////////////
   if (typeof web3 !== 'undefined') {
@@ -119,22 +146,6 @@ $(function(){
       });
     });
   });
-  
-
-  //// fetch key and claim holder datas from db and render ////
-
-  $.ajax({
-    url:'',
-    type:'',
-    success: (data) => {
-      // make div tag by Object Id
-      //
-    }
-  });
-
-  ///////// fetch keys and claims and render /////////////////
-
-  keyHolderContract = undefined;
 
   ///////////// handel add Id btn clicked ////////////////////
   $("#addIdBtn").click(function(){
@@ -162,166 +173,174 @@ $(function(){
     var name = $("#IdName").val();
     $("#IdName").val("");
 
+    // var ABI = [{"constant":false,"inputs":[],"name":"createClaimHolder","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"contractAddress","type":"address"}],"name":"newContractCreated","type":"event"}];
+    // var address = "0xA02FE433F0Fd2E203441DD7265b9b9FB95292F0A"; // claimHolder factory address on ropsten
+    // var claimHolderFactory = new web3.eth.Contract(ABI, address);
+
+
+
+
     if (!name){
       console.log("input your name!")
       $("#errorMsg").css("display", "block");
     }
     else{
-      web3.eth.getAccounts((err, res) => {
-        var address = res[0];
+      // web3.eth.getAccounts((err, res) => {
+      //   var address = res[0];
+      var ABI = [{"constant":false,"inputs":[],"name":"createClaimHolder","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"contractAddress","type":"address"}],"name":"newContractCreated","type":"event"}];
+       // claimHolder factory address on ropsten
+      var claimHolderFactory = new web3.eth.Contract(ABI, address);
 
-        $("#loader").css("display", "flex");
+      console.log(claimHolderFactory);
+      $("#loader").css("display", "flex");
 
-        // fetch data
-        $.ajax({
-          url: "fetchContractDatas/",
-          type: "GET",
-          success: (data, stat, xhr) => {
-            var keyHolderABI = data.keyHolderABI;
-            var keyHolderByte = data.keyHolderByteCode;
+      web3.eth.getAccounts(function(err,res){
+        var account = res[0];
+        console.log(account);
 
-            var claimHolderABI = data.claimHolderABI;
-            var claimHolderByte = data.claimHolderByteCode;
-
-            var keyHolderContract = new web3.eth.Contract(keyHolderABI);
-            keyHolderContract.options.data = keyHolderByte;
-
-            var claimHolderCotract = new web3.eth.Contract(claimHolderABI);
-            claimHolderCotract.options.data = claimHolderByte;
-
-            var keyHolderAddress = undefined;
-            var claimHolderAddress = undefined;
-            var fisrtKey = undefined;
-
-            var IDdata = {
-              "network": "",
-              "ethAccount": account,
-              "identity": {
-                "name": "",
-                "keyHolderAddr": "",
-                "claimHolderAddr": ""
-              }
-            };
-
-            //////////////  deploy keyHolder ///////////////
-            keyHolderContract.deploy()
-            .send({
-              from: address,
-                gas: 4712388,
-                gasPrice: 100000000
-             })
-            .on('receipt', function (receipt){
-              keyHolderAddress = receipt.contractAddress;
-              console.log("keyHolder address:" + keyHolderAddress);
-            })
-            .then((ContractInstance) => {
-                var ContractAddress = ContractInstance._address;
-
-                // $.ajax({
-                //  url: "addKeyHolderToDB",
-                //  type: "POST",
-                //  data: {
-                //    OwnerAddress: address,
-                //    keyHolderContractAddress: ContractAddress,
-                //  }
-                // });
-            })
-            .catch((err) => {
-                console.log(err);
-                $("#loader").css("display", "none");
-            })
-            .then(function(){
-
-              ///////////// deploy claim holder //////////
-              claimHolderCotract.deploy()
-              .send({
-                from: address,
-                gas: 4712388,
-                gasPrice: 100000000
-              })
-              .on('receipt', function(receipt){
-                claimHolderAddress = receipt.contractAddress;
-                console.log("claimHolder address:" + claimHolderAddress);
-                $("#loader").css("display", "none");
-              })
-              .catch(function(err){
-                console.log(err);
-                $("#loader").css("display", "none");
-              })
-              .then(function(){
-                if(keyHolderAddress && claimHolderAddress){
-                  //////////////////////////////////////////////////////
-                  //////////////////////////////////////////////////////
-                  ////////////////////// add to db /////////////////////
-                  //////////////////////////////////////////////////////
-                  //////////////////////////////////////////////////////
-                  IDdata.network = network;
-                  IDdata.ethAccount = address;
-                  IDdata.identity.name = name;
-                  IDdata.identity.keyHolderAddr = keyHolderAddress;
-                  IDdata.identity.claimHolderAddr = claimHolderAddress;
-
-                  $.ajax({
-                    url: 'storeId2DB',
-                    type: 'POST',
-                    data: IDdata,
-                    success: (result) => {
-                      console.log(result);
-                    }
-                  });
-                  /// log
-                  console.log("keys and claims holder added to DB");
-                }else{
-                  return console.log("something wnet wrong!!");
-                }
-              })
-              .then(function(){
-                var thumbnail = `<div class="idThumbnail" id="dipsy" onclick="IdThumbnailClicked(this)"><div>${name}</div></div>`;
-                $("#idArray").prepend(thumbnail);
-              })
-              .then(function(){
-                ///////////////////// get first key ///////////////////
-
-
-              });
-
-              /////////// display keys(first) and claims(null) ///////////
-
-
-            });
-          }
+        claimHolderFactory.methods.createClaimHolder().send({from: account})
+        .then(function(receipt){
+          console.log(receipt);
+          $("#loader").css("display", "none");
         });
+        //   console.log();
+        //   $("#loader").css("display", "none");
+        // })
+        // .catch(function(err){
+        //   console.log(err);
+        // });
 
       });
+      
+        // fetch data
+        // $.ajax({
+      //     url: "fetchContractDatas/",
+      //     type: "GET",
+      //     success: (data, stat, xhr) => {
+      //       var keyHolderABI = data.keyHolderABI;
+      //       var keyHolderByte = data.keyHolderByteCode;
+
+      //       var claimHolderABI = data.claimHolderABI;
+      //       var claimHolderByte = data.claimHolderByteCode;
+
+      //       var keyHolderContract = new web3.eth.Contract(keyHolderABI);
+      //       keyHolderContract.options.data = keyHolderByte;
+
+      //       var claimHolderCotract = new web3.eth.Contract(claimHolderABI);
+      //       claimHolderCotract.options.data = claimHolderByte;
+
+      //       var keyHolderAddress = undefined;
+      //       var claimHolderAddress = undefined;
+      //       var fisrtKey = undefined;
+
+      //       var IDdata = {
+      //         "network": "",
+      //         "ethAccount": address,
+      //         "identity": {
+      //           "name": "",
+      //           "keyHolderAddr": "",
+      //           "claimHolderAddr": ""
+      //         }
+      //       };
+
+      //       console.log(IDdata);
+
+      //       //////////////  deploy keyHolder ///////////////
+
+            
+      //       keyHolderContract.deploy()
+      //       .send({
+      //         from: address,
+      //         gas: 1002702,
+      //         gasPrice: 100000000000
+      //        })
+      //       .on('receipt', function (receipt){
+      //         keyHolderAddress = receipt.contractAddress;
+      //         console.log("keyHolder address:" + keyHolderAddress);
+      //       })
+      //       .on('transactionHash', function(transactionHash){
+      //         console.log('transactionHash:' + transactionHash);
+      //         web3.eth.getTransactionReceipt(transactionHash)
+      //         .then(function(obj){
+      //           console.log(obj);
+      //         });
+      //       })
+      //       .catch((err) => {
+      //           console.log(err);
+      //           $("#loader").css("display", "none");
+      //       })
+      //       .then(function(){
+
+      //         ///////////// deploy claim holder //////////
+      //         claimHolderCotract.deploy()
+      //         .send({
+      //           from: address,
+      //           gas: 4712388,
+      //           gasPrice: 100000000000
+      //         })
+      //         .on('receipt', function(receipt){
+      //           claimHolderAddress = receipt.contractAddress;
+      //           console.log("claimHolder address:" + claimHolderAddress);
+      //           $("#loader").css("display", "none");
+      //         })
+      //         .catch(function(err){
+      //           console.log(err);
+      //           $("#loader").css("display", "none");
+      //         })
+      //         .then(function(){
+      //           if(keyHolderAddress && claimHolderAddress){
+      //             //////////////////////////////////////////////////////
+      //             //////////////////////////////////////////////////////
+      //             ////////////////////// add to db /////////////////////
+      //             //////////////////////////////////////////////////////
+      //             //////////////////////////////////////////////////////
+      //             IDdata.network = network;
+      //             IDdata.ethAccount = address;
+      //             IDdata.identity.name = name;
+      //             IDdata.identity.keyHolderAddr = keyHolderAddress;
+      //             IDdata.identity.claimHolderAddr = claimHolderAddress;
+
+      //             $.ajax({
+      //               url: 'storeId2DB',
+      //               type: 'POST',
+      //               data: IDdata,
+      //               success: (result) => {
+      //                 var _id = result.createdId._id;
+      //                 var thumbnail = `<div class="idThumbnail" id="${_id}" onclick="IdThumbnailClicked(this)"><div>${name}</div></div>`;
+      //                 $("#idArray").prepend(thumbnail);
+
+      //                 return 
+      //               }
+      //             });
+
+      //           }else{
+      //             return console.log("something wnet wrong!!");
+      //           }
+      //         })
+      //         .then(function(){
+      //           keyHolderContract.options.address = keyHolderAddress;
+
+      //           keyHolderContract.methods.getKeysByPurpose(1).call({from: address}, function(err, res){console.log(res)});
+                
+      //         })
+      //         .then(function(){
+      //           ///////////////////// get first key ///////////////////
+
+
+      //         });
+
+      //         /////////// display keys(first) and claims(null) ///////////
+
+
+      //       });
+      //     }
+      //   });
+
+      // });
 
       $("#IdentityFormContainer").css("display", "none");
       $("#overlay").css("display", "none");
     }
 
   });
-
-  $("#addKeyBtn").click(function(){
-
-    console.log("clicked");
-  });
-
-  $("#addClaimBtn").click(function(){
-    console.log("clicked");
-  });
-
-  //////////////// Id thumbnail clicked ////////////////
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 });

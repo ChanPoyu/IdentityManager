@@ -7,18 +7,15 @@ const multer = require('multer'); // v1.0.5
 const upload = multer(); // for parsing multipart/form-data
 const Joi = require('joi'); 
 const path = require('path');
-const Eth = require('./EthProvider.js');
 const app = express();
 const port = 8000;
 const Identity = require('./db/Identity');
 require('dotenv').config();
 
 
-
 var Web3 = require('web3');
 var web3 = undefined;
 var networkId = 0;
-
 
 
 app.listen(port, () => console.log('server listening on port ' + port));
@@ -51,42 +48,24 @@ mongoose.connect('mongodb+srv://DipsyChan:'+dbPassword+'@cluster0-g6fei.mongodb.
 //////////////////////////////// post mothod ////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
 
-app.post('/configNetwork', function(req, res){
-  var networkId = parseInt(req.body.network);
-  
-  if(networkId == 1){
-    web3 = new Web3(new Web3.providers.WebsocketProvider("wss://mainnet.infura.io/ws/v3/88d2f86d1bfc42689611a88ea2a5dd43"));
-    return res.send('server set to mainnet');
-  }else if(networkId == 3){
-    web3 = new Web3(new Web3.providers.WebsocketProvider("wss://ropsten.infura.io/ws/v3/88d2f86d1bfc42689611a88ea2a5dd43"));
-    return res.send('server set to ropsten');
-  }else if(networkId == 4){
-    web3 = new Web3(new Web3.providers.WebsocketProvider("wss://rinkeby.infura.io/ws/v3/88d2f86d1bfc42689611a88ea2a5dd43"));
-    return res.send('server set to rinkeby');
-  }else if(networkId == 42){
-    web3 = new Web3(new Web3.providers.WebsocketProvider("wss://kovan.infura.io/ws/v3/88d2f86d1bfc42689611a88ea2a5dd43"));
-    return res.send('server set to kovan');
-  }else{
-    return res.send('FROM SEVER: somthing went wrong with your network provider!');
-  }
-});
-
 app.post('/storeId2DB', function(req, res){
 
-  var verification = true;
   var network = req.body.network;
   var ethAccount = req.body.ethAccount;
   var id = req.body.identity;
 
-  // start verify datas
-  // verify network
-  // verify ethAccount
-  // verify id name
-  // verify id keyHolderAddr
-  // verify id claimHolder
+  var idObj =  {
+    ethAccount: ethAccount,
+      identity: {
+        name: id.name,
+        keyHolderAddr: id.keyHolderAddr,
+        claimHolderAddr: id.claimHolderAddr
+      }
+  };
 
-  if(verification){
+  var velidationInfo = validateIdentity(idObj);
 
+  if(!velidationInfo.error){
     const identity = new Identity({
       _id: new mongoose.Types.ObjectId(),
       network: network,
@@ -113,9 +92,7 @@ app.post('/storeId2DB', function(req, res){
       });
     });
   }else{
-    return res.status(400).json({
-      message: 'BAD REQUEST! check network config or Id name!!!'
-    });
+    res.send(velidationInfo.error);
   }
 });
 
@@ -123,15 +100,11 @@ app.post('/storeId2DB', function(req, res){
 //////////////////////////////// get mothod /////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
 
-app.get('/eth/GreetingFromBlockchain/', (req, res) => {
-  
-  web3.eth.getBlockNumber().then((RES) => res.send('Hello this is block no.' + RES));
+app.get('/sayHello', function(req, res){
+
+  res.send({message: "hello dicky"});
 });
 
-app.get('/test/:aa/:bb', function(req, res){
-  var parm = req.params;
-  res.send(parm);
-});
 
 app.get('/getIdentityByEthAccount/:network/:ethAccount', (req, res) => {
 
@@ -158,23 +131,6 @@ app.get('/getIdentityByEthAccount/:network/:ethAccount', (req, res) => {
   });
 });
 
-app.get('/fetchContractDatas', (req, res) => {
-  var keyHolderContractObject = Eth.keyHolderContract;
-  var keyHolderABI = keyHolderContractObject.KeyHolderABI;
-  var keyHolderByteCode = keyHolderContractObject.KeyHolderByteCode;
-
-  var claimHolderContractObject = Eth.claimHolderContract;
-  var claimHolderABI = claimHolderContractObject.ClaimHolderABI;
-  var claimHolderByteCode = claimHolderContractObject.ClaimHolderByteCode;
-
-  return res.send({
-    keyHolderABI: keyHolderABI, 
-    keyHolderByteCode: keyHolderByteCode,
-    claimHolderABI: claimHolderABI,
-    claimHolderByteCode: claimHolderByteCode
-
-  });
-});
 
 app.get('/getDatasbyObjectId/:Objectid', function(req, res){
 
@@ -200,16 +156,21 @@ app.get('/getDatasbyObjectId/:Objectid', function(req, res){
 });
 
 /////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////// delete mothod //////////////////////////////////
+//////////////////////////////// functions //////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
 
-
-
-function validateName(course) {
+function validateIdentity(id) {
   const schema = {
-    name: Joi.string().min(3).required()
+    ethAccount: Joi.string().regex(/^0[xX][a-fA-F0-9]/).length(42),
+      identity: {
+        name: Joi.string().min(1).max(100),
+        keyHolderAddr: Joi.string().regex(/^0[xX][a-fA-F0-9]/).length(42),
+        claimHolderAddr: Joi.string().regex(/^0[xX][a-fA-F0-9]/).length(42)
+      }
   };
 
-  return Joi.validate(course, schema);
+  return Joi.validate(id, schema);
 }
+
+
 
