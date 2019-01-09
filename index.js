@@ -122,8 +122,8 @@ app.get('/getIdentityByEthAccount/:network/:ethAccount', (req, res) => {
     "ethAccount": ethAccount
   };
 
-  // Identity.find(sql)
-  Identity.find()
+  Identity.find(sql)
+  // Identity.find()
   .then(function(doc){
     if(doc && doc.length != 0){
       return res.status(200).json(doc);
