@@ -8,7 +8,7 @@ const upload = multer(); // for parsing multipart/form-data
 const Joi = require('joi'); 
 const path = require('path');
 const app = express();
-const port = 80;
+const port = 3000;
 const cors = require('cors');
 const Identity = require('./db/Identity');
 require('dotenv').config();
@@ -60,7 +60,6 @@ app.post('/storeId2DB', function(req, res){
     ethAccount: ethAccount,
       identity: {
         name: id.name,
-        keyHolderAddr: id.keyHolderAddr,
         claimHolderAddr: id.claimHolderAddr
       }
   };
@@ -74,7 +73,6 @@ app.post('/storeId2DB', function(req, res){
       ethAccount: ethAccount,
       identity: {
         name: id.name,
-        keyHolderAddr: id.keyHolderAddr,
         claimHolderAddr: id.claimHolderAddr
       },
       date: Date.now()
@@ -115,7 +113,9 @@ app.get('/sayHello', function(req, res){
 app.get('/getIdentityByEthAccount/:network/:ethAccount', (req, res) => {
 
   var network = req.params.network;
-  var ethAccount = req.params.ethAccount;
+  var ethAccount = req.params.ethAccount.toString();
+
+  ethAccount = ethAccount.toLowerCase();
 
   var sql = {
     "network": network,
@@ -127,10 +127,10 @@ app.get('/getIdentityByEthAccount/:network/:ethAccount', (req, res) => {
   .then(function(doc){
     if(doc && doc.length != 0){
       return res.status(200).json(doc);
-    }else{
+    }
+    else{
       return res.status(404).json({message: "NOT FOUND"});
     }
-    
   })
   .catch(function(err){
     return res.status(500).json({message: "QUERY ERROR"});
