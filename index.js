@@ -14,10 +14,6 @@ const Identity = require('./db/Identity');
 require('dotenv').config();
 
 
-// var Web3 = require('web3');
-// var web3 = undefined;
-// var networkId = 0;
-
 
 app.listen(port, () => console.log('server listening on port ' + port));
 app.set('views', path.join(__dirname, 'templates'));
